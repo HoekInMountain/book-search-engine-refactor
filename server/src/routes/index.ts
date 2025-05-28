@@ -1,16 +1,15 @@
 import type { Request, Response } from 'express';
 import express from 'express';
+import path from 'path';
+import apiRoutes from './api/index.js';
+
 const router = express.Router();
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-import apiRoutes from './api/index.js';
+// ✅ No need to declare __dirname — it's built-in when using CommonJS
 
 router.use('/api', apiRoutes);
 
-// serve up react front-end in production
+// Serve up React front-end in production
 router.use((_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../../client/build/index.html'));
 });
