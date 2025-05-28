@@ -13,7 +13,8 @@ interface UserPayload {
   _id: string;
 }
 
-interface AuthenticatedRequest extends Request {
+// Instead of extending Express.Request directly
+export interface AuthenticatedRequest extends Request {
   user?: UserPayload;
 }
 
@@ -22,21 +23,21 @@ export function signToken({ username, email, _id }: UserPayload): string {
   return jwt.sign({ data: payload }, secret, { expiresIn: expiration });
 }
 
-export function authMiddleware({ req }: { req: AuthenticatedRequest }): AuthenticatedRequest {
+export function authMiddleware({ req }: { req: Request }): AuthenticatedRequest {
   let token = req.body.token || req.query.token || req.headers.authorization;
 
   if (req.headers.authorization) {
     token = token.split(' ').pop()?.trim();
   }
 
-  if (!token) return req;
+  if (!token) return req as AuthenticatedRequest;
 
   try {
     const { data } = jwt.verify(token, secret, { maxAge: expiration }) as { data: UserPayload };
-    req.user = data;
+    (req as AuthenticatedRequest).user = data;
   } catch (err) {
     console.warn('Invalid token');
   }
 
-  return req;
+  return req as AuthenticatedRequest;
 }
