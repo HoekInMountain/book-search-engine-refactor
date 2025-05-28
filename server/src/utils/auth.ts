@@ -13,31 +13,28 @@ interface UserPayload {
   _id: string;
 }
 
-// Instead of extending Express.Request directly
-export interface AuthenticatedRequest extends Request {
-  user?: UserPayload;
-}
-
 export function signToken({ username, email, _id }: UserPayload): string {
   const payload = { username, email, _id };
   return jwt.sign({ data: payload }, secret, { expiresIn: expiration });
 }
 
-export function authMiddleware({ req }: { req: Request }): AuthenticatedRequest {
+// This function mutates `req` and adds `user`, but we don’t force the type extension
+export function authMiddleware({ req }: { req: Request }): Request {
   let token = req.body.token || req.query.token || req.headers.authorization;
 
   if (req.headers.authorization) {
     token = token.split(' ').pop()?.trim();
   }
 
-  if (!token) return req as AuthenticatedRequest;
+  if (!token) return req;
 
   try {
     const { data } = jwt.verify(token, secret, { maxAge: expiration }) as { data: UserPayload };
-    (req as AuthenticatedRequest).user = data;
+    // @ts-ignore: Add user to request (safely ignored if Express doesn't define it)
+    req.user = data;
   } catch (err) {
     console.warn('Invalid token');
   }
 
-  return req as AuthenticatedRequest;
+  return req;
 }
